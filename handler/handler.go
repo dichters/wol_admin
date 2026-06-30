@@ -4,8 +4,8 @@ package handler
 import (
 	"encoding/json"
 	"log/slog"
-	"net"
 	"net/http"
+
 	"wol_admin/antishake"
 	"wol_admin/nas"
 )
@@ -76,15 +76,6 @@ func (h *APIHandler) Shutdown(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response{Code: 0, Message: "shutdown command sent"})
-}
-
-// IsLocalRequest checks if the request comes from localhost (127.0.0.1 or ::1).
-func IsLocalRequest(r *http.Request) bool {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return false
-	}
-	return host == "127.0.0.1" || host == "::1"
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -33,10 +33,10 @@ func main() {
 	// 4. Build HTTP mux
 	mux := http.NewServeMux()
 
-	// API routes — localhost only
+	// API routes
 	apiHandler := handler.NewAPIHandler(locker)
-	mux.HandleFunc("/api/wol", localOnly(apiHandler.WOL))
-	mux.HandleFunc("/api/shutdown", localOnly(apiHandler.Shutdown))
+	mux.HandleFunc("/api/wol", apiHandler.WOL)
+	mux.HandleFunc("/api/shutdown", apiHandler.Shutdown)
 
 	// Static files — serve embedded Vue3 frontend
 	distFS, err := fs.Sub(staticFS, "dist")
@@ -71,16 +71,4 @@ func main() {
 	server.Close()
 	logger.Sync()
 	slog.Info("server stopped")
-}
-
-// localOnly wraps an http.HandlerFunc to reject non-localhost requests.
-func localOnly(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !handler.IsLocalRequest(r) {
-			slog.Warn("API access denied: non-local request", "remote", r.RemoteAddr, "path", r.URL.Path)
-			http.Error(w, "forbidden", http.StatusForbidden)
-			return
-		}
-		next(w, r)
-	}
 }
