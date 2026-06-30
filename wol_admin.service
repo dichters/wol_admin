@@ -1,0 +1,19 @@
+[Unit]
+Description=WOL Admin - NAS Remote Control Web Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.local/share/wol_admin
+ExecStart=%h/.local/share/wol_admin/wol_admin
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Graceful shutdown
+TimeoutStopSec=10
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=default.target

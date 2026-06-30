@@ -1,5 +1,4 @@
 # Binaries
-webserver
 *.exe
 *.exe~
 *.dll
@@ -23,6 +22,7 @@ frontend/dist/
 
 # Embedded dist (built by frontend, embedded in Go binary)
 dist/
+build/
 
 # IDE
 .vscode/
