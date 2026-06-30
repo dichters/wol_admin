@@ -1,101 +1,137 @@
-# mydev-go
+# WOL Admin — NAS 远程控制面板
 
-A Fiber-based web service template project.
+基于 Go + Vue3 的轻量级 NAS 远程开关机控制面板，适用于香橙派等 ARM64 开发板。
 
-## Project Structure
+## 功能
 
-```
-mydev-go/
-├── mydev-service/    # Web backend service
-├── mydev-api/        # Common types (exceptions, responses, enums)
-├── mydev-sdk/        # SDK for external callers
-└── log/              # Log files (gitignored)
-```
+- **WOL 开机**：点击按钮发送 Wake-on-LAN 魔术包，远程唤醒 NAS
+- **SSH 关机**：点击按钮通过 SSH 远程执行 `sudo poweroff` 安全关机
+- **双层防抖**：前端按钮锁定 + 后端 Redis/内存防抖，防止重复提交
+- **单文件部署**：前端资源嵌入 Go 二进制，零依赖交付
 
-## Requirements
-
-- Go 1.25.6
-- Fiber v2.50.0
-
-## Setup
+## 交叉编译
 
 ```bash
-# Download dependencies
-go work sync
-
-# Run service
-cd mydev-service/cmd/server
-go run main.go
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o webserver main.go
 ```
 
-## API Endpoints
+## Armbian Redis 安装配置步骤
 
-All endpoints use POST method and return JSON:
+```bash
+# 安装 Redis
+sudo apt update
+sudo apt install redis-server -y
 
-### Health Check
-```
-POST /srv/v1/hc
-```
+# 启动并设置开机自启
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
 
-Response:
-```json
-{
-  "code": 0,
-  "msg": "Success.",
-  "data": []
-}
+# 验证运行
+redis-cli ping
+# 应返回 PONG
 ```
 
-### Divide
-```
-POST /srv/v1/divide
-Content-Type: application/json
+## config.json 全字段说明
 
-{
-  "a": 10,
-  "b": 2
-}
+将 `config.template.json` 复制为 `config.json` 并修改：
+
+```bash
+cp config.template.json config.json
 ```
 
-Response:
-```json
-{
-  "code": 0,
-  "msg": "Success.",
-  "data": [5]
-}
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `server_port` | string | Web 服务监听端口，默认 `8080` |
+| `stdout_log_level` | string | 控制台日志级别：`Debug` / `Info` / `Warn` / `Error` |
+| `file_log_level` | string | 磁盘日志级别：`Debug` / `Info` / `Warn` / `Error` |
+| `enable_anti_shake` | bool | 是否开启后端 Redis 防抖锁。`false` 则跳过 Redis |
+| `redis.ip` | string | Redis 地址（仅 enable_anti_shake=true 时生效） |
+| `redis.port` | string | Redis 端口 |
+| `redis.password` | string | Redis 密码，空字符串表示无密码 |
+| `nas_ip` | string | NAS 局域网 IP，用于 SSH 关机 |
+| `nas_user` | string | NAS SSH 登录账号 |
+| `nas_mac` | string | NAS MAC 地址，用于 WOL 唤醒 |
+
+**日志级别说明**：
+- `Debug`：最详细，输出所有调试信息
+- `Info`：常规信息（默认控制台级别）
+- `Warn`：仅警告和错误（推荐文件级别，减少 SD 卡写入）
+- `Error`：仅错误
+
+两个渠道必须独立配置不同级别，控制台可更详细，文件建议更高级别以保护 SD 卡寿命。
+
+## 服务启停命令
+
+```bash
+# 复制二进制和配置到部署目录
+sudo mkdir -p /opt/wol_admin
+sudo cp webserver /opt/wol_admin/
+sudo cp config.json /opt/wol_admin/
+
+# 安装 systemd 服务
+sudo cp webserver.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable webserver
+
+# 启动 / 停止 / 重启
+sudo systemctl start webserver
+sudo systemctl stop webserver
+sudo systemctl restart webserver
+
+# 查看状态和日志
+sudo systemctl status webserver
+sudo journalctl -u webserver -f
 ```
 
-## SDK Usage
+## 部署流程
 
-```go
-import "github.com/mydev/mydev-sdk/client"
+1. 在开发机上安装 Go 1.25.8+、Node.js 18+
+2. 构建前端：`cd frontend && npm install && npm run build`
+3. 编译后端：`CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o webserver main.go`
+4. 将 `webserver`、`config.json` 传至 Armbian 开发板
+5. 按上述命令安装 systemd 服务
+6. 浏览器访问 `http://<开发板IP>:8080`
 
-client := client.NewClient("http://localhost:8080")
+## SSH 免密配置
 
-// Health check
-result, err := client.HealthCheck(traceId, spanId)
+关机功能需要 SSH 免密登录，请提前配置：
 
-// Divide
-result, err := client.Divide(10, 2, traceId, spanId)
+```bash
+# 在开发板上生成密钥（如尚未生成）
+ssh-keygen -t ed25519
+
+# 将公钥复制到 NAS
+ssh-copy-id <nas_user>@<nas_ip>
+
+# 验证免密登录
+ssh <nas_user>@<nas_ip> "echo ok"
 ```
 
-## Tracing
+## WOL 依赖
 
-The service uses B3 Propagation protocol for distributed tracing:
-- `X-B3-TraceId`: Trace ID
-- `X-B3-SpanId`: Span ID
+```bash
+# 在开发板上安装 wakeonlan 工具
+sudo apt install wakeonlan -y
+```
 
-If not provided in request headers, new IDs will be auto-generated.
+## 项目结构
 
-## Exception Handling
-
-- **BizException**: Business errors (returns custom code and message)
-- **ServiceException**: Service errors (returns custom code, but message is masked)
-- **Unknown errors**: Returns code 99999 with "Internal Server Error."
-
-## Logging
-
-- Default level: INFO
-- Outputs to: stdout, `log/service.log`, `log/error.log`
-- ERROR level and above also writes to `log/error.log`
+```
+wol_admin/
+├── main.go              # 程序入口：配置加载、日志初始化、HTTP 服务
+├── config/config.go     # 配置读取独立包
+├── logger/logger.go     # 双渠道日志封装
+├── antishake/antishake.go # Redis/内存防抖锁
+├── nas/nas.go           # NAS 操作（WOL、SSH关机）
+├── handler/handler.go   # HTTP 接口处理器
+├── frontend/            # Vue3 前端源码
+│   ├── src/
+│   │   ├── App.vue
+│   │   ├── main.ts
+│   │   ├── api/index.ts       # API 请求封装
+│   │   └── utils/debounce.ts  # 通用防抖工具
+│   └── ...
+├── config.template.json # 配置模板
+├── webserver.service    # systemd 服务配置
+└── README.md
+```

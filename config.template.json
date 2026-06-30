@@ -1,0 +1,14 @@
+{
+  "server_port": "8080",
+  "stdout_log_level": "Info",
+  "file_log_level": "Warn",
+  "enable_anti_shake": true,
+  "redis": {
+    "ip": "127.0.0.1",
+    "port": "6379",
+    "password": ""
+  },
+  "nas_ip": "192.168.1.100",
+  "nas_user": "admin",
+  "nas_mac": "00:11:22:33:44:55"
+}
