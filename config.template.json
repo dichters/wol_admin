@@ -2,6 +2,7 @@
   "server_port": "8080",
   "stdout_log_level": "Info",
   "file_log_level": "Warn",
+  "error_log_level": "Error",
   "enable_anti_shake": true,
   "redis": {
     "ip": "127.0.0.1",
