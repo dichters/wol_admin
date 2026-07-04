@@ -8,12 +8,21 @@ import (
 
 	"wol_admin/antishake"
 	"wol_admin/nas"
+	"wol_admin/version"
 )
 
 // response is the unified API response structure.
 type response struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+// versionResponse is the response structure for the version endpoint.
+type versionResponse struct {
+	Code      int    `json:"code"`
+	Version   string `json:"version"`
+	Arch      string `json:"arch"`
+	BuildTime string `json:"build_time"`
 }
 
 // APIHandler holds dependencies for API handlers.
@@ -26,13 +35,18 @@ func NewAPIHandler(l *antishake.Locker) *APIHandler {
 	return &APIHandler{locker: l}
 }
 
-// WOL handles POST /api/wol — sends a Wake-on-LAN packet to the NAS.
-func (h *APIHandler) WOL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeJSON(w, http.StatusMethodNotAllowed, response{Code: -1, Message: "method not allowed"})
-		return
-	}
+// Version handles GET /wol/api/version — returns build version info.
+func (h *APIHandler) Version(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, versionResponse{
+		Code:      0,
+		Version:   version.Version,
+		Arch:      version.Arch,
+		BuildTime: version.BuildTime,
+	})
+}
 
+// WOL handles POST /wol/api/wol — sends a Wake-on-LAN packet to the NAS.
+func (h *APIHandler) WOL(w http.ResponseWriter, r *http.Request) {
 	clientID := r.Header.Get("X-Client-ID")
 	if clientID == "" {
 		clientID = r.RemoteAddr
@@ -52,13 +66,8 @@ func (h *APIHandler) WOL(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, response{Code: 0, Message: "WOL packet sent"})
 }
 
-// Shutdown handles POST /api/shutdown — sends SSH poweroff to the NAS.
+// Shutdown handles POST /wol/api/shutdown — sends SSH poweroff to the NAS.
 func (h *APIHandler) Shutdown(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeJSON(w, http.StatusMethodNotAllowed, response{Code: -1, Message: "method not allowed"})
-		return
-	}
-
 	clientID := r.Header.Get("X-Client-ID")
 	if clientID == "" {
 		clientID = r.RemoteAddr
