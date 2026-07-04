@@ -40,7 +40,7 @@
 
 ```bash
 VERSION=0.0.1
-BUILD_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+BUILD_TIME=$(date -u '+%Y-%m-%d %H:%M:%S')
 LDFLAGS="-s -w \
   -X wol_admin/version.Version=${VERSION} \
   -X wol_admin/version.Arch=arm64 \
@@ -57,7 +57,7 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o build/wo
 
 ```bash
 ./wol_admin version
-# 输出：wol_admin 0.0.1 arm64 2026-07-04T12:00:00Z
+# 输出：wol_admin 0.0.1 arm64 2026-07-04 12:00:00
 ```
 
 ## Armbian Redis 安装配置步骤

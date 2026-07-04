@@ -126,7 +126,7 @@ const debouncedShutdown = debounce(handleShutdown, 500)
     </div>
 
     <div class="version-info" v-if="versionInfo">
-      v{{ versionInfo.version }} · {{ versionInfo.arch }} · {{ versionInfo.build_time }}
+      v{{ versionInfo.version }}
     </div>
   </div>
 </template>
