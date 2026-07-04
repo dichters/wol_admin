@@ -1,0 +1,17 @@
+export default {
+  title: 'NAS管理面板',
+  wakeUp: '唤醒NAS',
+  shutdown: '关闭NAS',
+  waking: '唤醒中...',
+  shutting: '关机中...',
+  wolSuccess: 'WOL唤醒包已发送',
+  shutdownSuccess: '关机指令已发送',
+  tooFrequent: '请求过于频繁，请稍后再试',
+  error: '操作失败',
+  version: '版本',
+  arch: '架构',
+  buildTime: '构建时间',
+  confirmShutdown: '确定要关闭NAS吗？',
+  confirm: '确定',
+  cancel: '取消',
+}

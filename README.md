@@ -8,11 +8,56 @@
 - **SSH 关机**：点击按钮通过 SSH 远程执行 `sudo poweroff` 安全关机
 - **双层防抖**：前端按钮锁定 + 后端 Redis/内存防抖，防止重复提交
 - **单文件部署**：前端资源嵌入 Go 二进制，零依赖交付
+- **版本管理**：内置版本号、架构、构建时间，支持 `./wol_admin version` 查看
+- **国际化**：支持中英文切换
 
-## 交叉编译
+## 构建与编译
+
+### 构建（推荐）
 
 ```bash
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o build/wol_admin main.go
+# Bash (Linux/macOS/Git Bash)
+./bin/sh/build-linux-arm64.sh [版本号]
+
+# PowerShell (Windows)
+.\bin\ps\build-linux-arm64.ps1 [版本号]
+```
+
+不指定版本号时自动从 `version/version.go` 读取。产物统一输出到 `build/wol_admin`（Windows 为 `build/wol_admin.exe`）。
+
+可用脚本：
+
+| 平台 | Bash | PowerShell |
+|------|------|------------|
+| Linux x64 | `bin/sh/build-linux-x64.sh` | `bin/ps/build-linux-x64.ps1` |
+| Linux arm64 | `bin/sh/build-linux-arm64.sh` | `bin/ps/build-linux-arm64.ps1` |
+| Windows x64 | `bin/sh/build-windows-x64.sh` | `bin/ps/build-windows-x64.ps1` |
+| Windows arm | `bin/sh/build-windows-arm.sh` | `bin/ps/build-windows-arm.ps1` |
+| macOS Apple Silicon | `bin/sh/build-macos-apple-silicon.sh` | `bin/ps/build-macos-apple-silicon.ps1` |
+| macOS Intel | `bin/sh/build-macos-intel.sh` | `bin/ps/build-macos-intel.ps1` |
+
+### 手动交叉编译
+
+```bash
+VERSION=0.0.1
+BUILD_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+LDFLAGS="-s -w \
+  -X wol_admin/version.Version=${VERSION} \
+  -X wol_admin/version.Arch=arm64 \
+  -X wol_admin/version.BuildTime=${BUILD_TIME}"
+
+# 先构建前端
+cd frontend && npm run build && cd ..
+
+# 再编译 Go
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o build/wol_admin .
+```
+
+### 查看版本
+
+```bash
+./wol_admin version
+# 输出：wol_admin 0.0.1 arm64 2026-07-04T12:00:00Z
 ```
 
 ## Armbian Redis 安装配置步骤
@@ -117,7 +162,7 @@ systemctl --user status wol_admin
 journalctl --user -u wol_admin -f
 ```
 
-浏览器访问 `http://<开发板IP>:8080`，看到控制面板即部署成功。
+浏览器访问 `http://<开发板IP>:8080/wol/`，看到控制面板即部署成功。
 
 ### 日常操作
 
@@ -185,13 +230,20 @@ wol_admin/
 ├── antishake/antishake.go # Redis/内存防抖锁
 ├── nas/nas.go             # NAS 操作（WOL、SSH关机）
 ├── handler/handler.go     # HTTP 接口处理器
+├── version/version.go     # 版本信息（ldflags 注入）
 ├── frontend/              # Vue3 前端源码
 │   ├── src/
 │   │   ├── App.vue
 │   │   ├── main.ts
 │   │   ├── api/index.ts       # API 请求封装
+│   │   ├── i18n/              # 国际化（中英文）
+│   │   ├── router/            # 路由配置
+│   │   ├── views/             # 页面组件
 │   │   └── utils/debounce.ts  # 通用防抖工具
 │   └── ...
+├── bin/                   # 构建脚本
+│   ├── sh/                # Bash 版（6 个平台各一个脚本）
+│   └── ps/                # PowerShell 版（6 个平台各一个脚本）
 ├── config.template.json   # 配置模板
 ├── wol_admin.service      # systemd 用户级服务配置
 └── README.md

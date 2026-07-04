@@ -1,0 +1,17 @@
+export default {
+  title: 'NAS Admin Panel',
+  wakeUp: 'Wake NAS',
+  shutdown: 'Shutdown NAS',
+  waking: 'Waking...',
+  shutting: 'Shutting down...',
+  wolSuccess: 'WOL packet sent',
+  shutdownSuccess: 'Shutdown command sent',
+  tooFrequent: 'Too frequent, please try later',
+  error: 'Operation failed',
+  version: 'Version',
+  arch: 'Arch',
+  buildTime: 'Build Time',
+  confirmShutdown: 'Are you sure you want to shut down the NAS?',
+  confirm: 'Confirm',
+  cancel: 'Cancel',
+}
