@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read version from version.go
+        id: base_version
+        run: |
+          BASE_VERSION=$(grep 'Version\s*=' version/version.go | head -1 | grep -oP '"\K[^"]+')
+          echo "base_version=${BASE_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Base version: ${BASE_VERSION}"
+
+      - name: Determine release version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # tag 触发：使用 tag 名（去掉 v 前缀）
+            TAG="${GITHUB_REF#refs/tags/}"
+            VERSION="${TAG#v}"
+          else
+            # push to master 或手动触发：版本号 + 短 commit hash
+            SHORT_SHA="${GITHUB_SHA::7}"
+            VERSION="${{ steps.base_version.outputs.base_version }}-${SHORT_SHA}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${VERSION}"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Build all platforms
+        run: |
+          chmod +x bin/sh/build-all.sh
+          ./bin/sh/build-all.sh "${{ steps.version.outputs.version }}"
+
+      - name: Create release and upload assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # 判断是否为 tag 触发（正式版 vs 预发布版）
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            PRERELEASE_FLAG=""
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            PRERELEASE_FLAG="--prerelease"
+            TAG="v${VERSION}"
+          fi
+
+          # 创建 release
+          gh release create "${TAG}" \
+            --title "wol_admin ${VERSION}" \
+            --notes "## wol_admin ${VERSION}
+
+          自动构建发布。详见 [README](https://github.com/${{ github.repository }}/blob/master/README.md)。
+
+          ### 下载说明
+          - **Linux x64**: \`wol_admin-${VERSION}-linux-x64.tar.gz\`
+          - **Linux arm64** (香橙派等): \`wol_admin-${VERSION}-linux-arm64.tar.gz\`
+          - **Windows x64**: \`wol_admin-${VERSION}-windows-x64.zip\`
+          - **Windows arm**: \`wol_admin-${VERSION}-windows-arm.zip\`
+          - **macOS Apple Silicon**: \`wol_admin-${VERSION}-macos-apple-silicon.tar.gz\`
+          - **macOS Intel**: \`wol_admin-${VERSION}-macos-intel.tar.gz\`
+
+          每个压缩包内含：
+          - 二进制文件
+          - 配置文件样例 (\`config.template.json\`)
+          - systemd 服务文件 (\`wol_admin.service\`)
+          - 说明文档 (\`README.md\`)
+          " \
+            ${PRERELEASE_FLAG} \
+            release/*
+
+          echo "Release ${TAG} created successfully!"
