@@ -24,6 +24,9 @@ frontend/dist/
 dist/
 build/
 
+# Release output (CI build artifacts)
+release/
+
 # IDE
 .vscode/
 .idea/
