@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [created]
 
 permissions:
   contents: write
@@ -11,6 +10,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,11 +18,14 @@ jobs:
       - name: Determine release version
         id: version
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
+          TAG="${{ github.event.release.tag_name }}"
           VERSION="${TAG#v}"
+
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "Release version: ${VERSION} (tag: ${TAG})"
+
+          echo "Release version: ${VERSION}"
+          echo "Release tag: ${TAG}"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -32,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -47,34 +50,16 @@ jobs:
           chmod +x bin/sh/build-all.sh
           ./bin/sh/build-all.sh "${{ steps.version.outputs.version }}"
 
-      - name: Create release and upload assets
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           TAG="${{ steps.version.outputs.tag }}"
 
-          gh release create "${TAG}" \
-            --title "wol_admin ${VERSION}" \
-            --notes "## wol_admin ${VERSION}
+          echo "Uploading assets to release ${TAG}"
 
-          自动构建发布。详见 [README](https://github.com/${{ github.repository }}/blob/master/README.md)。
+          gh release upload "${TAG}" \
+            release/* \
+            --clobber
 
-          ### 下载说明
-          - **Linux aarch64**: \`wol_admin-${VERSION}-linux-aarch64.zip\`
-          - **Linux x86-64**: \`wol_admin-${VERSION}-linux-x86-64.zip\`
-          - **macOS darwin** (Apple Silicon): \`wol_admin-${VERSION}-macos-darwin.zip\`
-          - **macOS Intel**: \`wol_admin-${VERSION}-macos-intel.zip\`
-          - **Windows x86-64**: \`wol_admin-${VERSION}-windows-x86-64.zip\`
-          - **源码包**: \`wol_admin-${VERSION}-source-code.zip\`
-
-          每个二进制压缩包内含：
-          - 二进制文件
-          - 配置文件样例 (\`config.template.json\`)
-          - systemd 服务文件 (\`wol_admin.service\`，仅 Linux/macOS)
-
-          所有产物均使用 \`CGO_ENABLED=0\` 纯静态编译。
-          " \
-            release/*
-
-          echo "Release ${TAG} created successfully!"
+          echo "Release ${TAG} assets uploaded successfully!"
