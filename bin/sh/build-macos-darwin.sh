@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build & package wol_admin for macOS darwin (Apple Silicon)
+# Build & package wol-panel for macOS darwin (Apple Silicon)
 # 用法：./bin/sh/build-macos-darwin.sh [version]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -13,22 +13,22 @@ if [ ! -d "dist" ]; then
     cd frontend && npm run build && cd ..
 fi
 
-echo "Building wol_admin v${VERSION} darwin/arm64"
+echo "Building wol-panel v${VERSION} darwin/arm64"
 CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
-    -ldflags "-s -w -X wol_admin/version.Version=${VERSION} -X wol_admin/version.Arch=arm64 -X 'wol_admin/version.BuildTime=${BUILD_TIME}'" \
-    -o build/wol_admin .
+    -ldflags "-s -w -X wol-panel/version.Version=${VERSION} -X wol-panel/version.Arch=arm64 -X 'wol-panel/version.BuildTime=${BUILD_TIME}'" \
+    -o build/wol-panel .
 
 RELEASE_DIR="release"
 mkdir -p "$RELEASE_DIR"
 
-PKG_NAME="wol_admin-${VERSION}-macos-darwin"
+PKG_NAME="wol-panel-${VERSION}-macos-darwin"
 PKG_DIR="${RELEASE_DIR}/${PKG_NAME}"
 rm -rf "$PKG_DIR"
 mkdir -p "$PKG_DIR"
 
-cp build/wol_admin "${PKG_DIR}/"
+cp build/wol-panel "${PKG_DIR}/"
 cp config.template.json "${PKG_DIR}/"
-cp wol_admin.service "${PKG_DIR}/"
+cp wol-panel.service "${PKG_DIR}/"
 
 rm -f "${RELEASE_DIR}/${PKG_NAME}.zip"
 pushd "$RELEASE_DIR" > /dev/null

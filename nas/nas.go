@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os/exec"
-	"wol_admin/config"
+	"wol-panel/config"
 )
 
 // WOL sends a Wake-on-LAN magic packet to the NAS MAC address.

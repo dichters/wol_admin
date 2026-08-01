@@ -1,4 +1,4 @@
-# WOL Admin — NAS 远程控制面板
+# WOL Panel — NAS 远程控制面板
 
 基于 Go + Vue3 的轻量级 NAS 远程开关机控制面板，适用于香橙派等 ARM64 开发板。
 
@@ -8,7 +8,7 @@
 - **SSH 关机**：点击按钮通过 SSH 远程执行 `sudo poweroff` 安全关机
 - **双层防抖**：前端按钮锁定 + 后端 Redis/内存防抖，防止重复提交
 - **单文件部署**：前端资源嵌入 Go 二进制，零依赖交付
-- **版本管理**：内置版本号、架构、构建时间，支持 `./wol_admin version` 查看
+- **版本管理**：内置版本号、架构、构建时间，支持 `./wol-panel version` 查看
 - **国际化**：支持中英文切换
 
 ## 构建与编译
@@ -23,7 +23,7 @@
 .\bin\ps\build-linux-arm64.ps1 [版本号]
 ```
 
-不指定版本号时自动从 `version/version.go` 读取。产物统一输出到 `build/wol_admin`（Windows 为 `build/wol_admin.exe`）。
+不指定版本号时自动从 `version/version.go` 读取。产物统一输出到 `build/wol-panel`（Windows 为 `build/wol-panel.exe`）。
 
 可用脚本：
 
@@ -42,22 +42,22 @@
 VERSION=0.0.1
 BUILD_TIME=$(date -u '+%Y-%m-%d %H:%M:%S')
 LDFLAGS="-s -w \
-  -X wol_admin/version.Version=${VERSION} \
-  -X wol_admin/version.Arch=arm64 \
-  -X wol_admin/version.BuildTime=${BUILD_TIME}"
+  -X wol-panel/version.Version=${VERSION} \
+  -X wol-panel/version.Arch=arm64 \
+  -X wol-panel/version.BuildTime=${BUILD_TIME}"
 
 # 先构建前端
 cd frontend && npm run build && cd ..
 
 # 再编译 Go
-CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o build/wol_admin .
+CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o build/wol-panel .
 ```
 
 ### 查看版本
 
 ```bash
-./wol_admin version
-# 输出：wol_admin 0.0.1 arm64 2026-07-04 12:00:00
+./wol-panel version
+# 输出：wol-panel 0.0.1 arm64 2026-07-04 12:00:00
 ```
 
 ## Armbian Redis 安装配置步骤
@@ -110,7 +110,7 @@ cp config.template.json config.json
 ## 部署流程（完整步骤）
 
 > 以下所有操作均以**普通用户**身份在 Armbian 开发板上执行，无需 root 权限。
-> 部署路径为 `~/.local/share/wol_admin/`，无需修改系统目录权限。
+> 部署路径为 `~/.local/share/wol-panel/`，无需修改系统目录权限。
 
 ### 1. 上传文件
 
@@ -118,18 +118,18 @@ cp config.template.json config.json
 
 ```bash
 # 在开发机上执行（替换 <板子IP> 和 <用户名>）
-scp build/wol_admin config.json <用户名>@<板子IP>:~/wol_admin_tmp/
+scp build/wol-panel config.json <用户名>@<板子IP>:~/wol-panel_tmp/
 ```
 
 ### 2. 部署到用户目录
 
 ```bash
 # SSH 登录开发板后执行
-mkdir -p ~/.local/share/wol_admin
-mv ~/wol_admin_tmp/wol_admin ~/.local/share/wol_admin/
-mv ~/wol_admin_tmp/config.json ~/.local/share/wol_admin/
-chmod +x ~/.local/share/wol_admin/wol_admin
-rmdir ~/wol_admin_tmp
+mkdir -p ~/.local/share/wol-panel
+mv ~/wol-panel_tmp/wol-panel ~/.local/share/wol-panel/
+mv ~/wol-panel_tmp/config.json ~/.local/share/wol-panel/
+chmod +x ~/.local/share/wol-panel/wol-panel
+rmdir ~/wol-panel_tmp
 ```
 
 ### 3. 安装用户级 systemd 服务
@@ -139,11 +139,11 @@ rmdir ~/wol_admin_tmp
 mkdir -p ~/.config/systemd/user/
 
 # 复制 service 文件
-cp wol_admin.service ~/.config/systemd/user/
+cp wol-panel.service ~/.config/systemd/user/
 
 # 重载并启用
 systemctl --user daemon-reload
-systemctl --user enable wol_admin
+systemctl --user enable wol-panel
 
 # 确保登出后服务仍运行（重要！）
 loginctl enable-linger $(whoami)
@@ -153,13 +153,13 @@ loginctl enable-linger $(whoami)
 
 ```bash
 # 启动服务
-systemctl --user start wol_admin
+systemctl --user start wol-panel
 
 # 查看状态
-systemctl --user status wol_admin
+systemctl --user status wol-panel
 
 # 查看实时日志
-journalctl --user -u wol_admin -f
+journalctl --user -u wol-panel -f
 ```
 
 浏览器访问 `http://<开发板IP>:8080/wol/`，看到控制面板即部署成功。
@@ -167,23 +167,23 @@ journalctl --user -u wol_admin -f
 ### 日常操作
 
 ```bash
-systemctl --user start wol_admin      # 启动
-systemctl --user stop wol_admin       # 停止
-systemctl --user restart wol_admin    # 重启
-systemctl --user status wol_admin     # 状态
-journalctl --user -u wol_admin -f     # 实时日志
+systemctl --user start wol-panel      # 启动
+systemctl --user stop wol-panel       # 停止
+systemctl --user restart wol-panel    # 重启
+systemctl --user status wol-panel     # 状态
+journalctl --user -u wol-panel -f     # 实时日志
 ```
 
 ### 更新版本
 
 ```bash
 # 1. 上传新二进制到开发板
-scp build/wol_admin <用户名>@<板子IP>:~/
+scp build/wol-panel <用户名>@<板子IP>:~/
 
 # 2. SSH 登录后替换并重启
-cp ~/wol_admin ~/.local/share/wol_admin/wol_admin
-chmod +x ~/.local/share/wol_admin/wol_admin
-systemctl --user restart wol_admin
+cp ~/wol-panel ~/.local/share/wol-panel/wol-panel
+chmod +x ~/.local/share/wol-panel/wol-panel
+systemctl --user restart wol-panel
 ```
 
 ### TF 卡存储（可选）
@@ -194,8 +194,8 @@ systemctl --user restart wol_admin
 
 ```bash
 # 例：TF 卡挂载在 /mnt/tf
-mkdir -p /mnt/tf/wol_admin
-ln -sf /mnt/tf/wol_admin ~/.local/share/wol_admin
+mkdir -p /mnt/tf/wol-panel
+ln -sf /mnt/tf/wol-panel ~/.local/share/wol-panel
 ```
 
 ## SSH 免密配置
@@ -223,7 +223,7 @@ sudo apt install wakeonlan -y
 ## 项目结构
 
 ```
-wol_admin/
+wol-panel/
 ├── main.go                # 程序入口：配置加载、日志初始化、HTTP 服务
 ├── config/config.go       # 配置读取独立包
 ├── logger/logger.go       # 三渠道日志封装
@@ -245,6 +245,6 @@ wol_admin/
 │   ├── sh/                # Bash 版（6 个平台各一个脚本）
 │   └── ps/                # PowerShell 版（6 个平台各一个脚本）
 ├── config.template.json   # 配置模板
-├── wol_admin.service      # systemd 用户级服务配置
+├── wol-panel.service      # systemd 用户级服务配置
 └── README.md
 ```

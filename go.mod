@@ -1,4 +1,4 @@
-module wol_admin
+module wol-panel
 
 go 1.25.8
 

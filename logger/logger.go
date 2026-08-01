@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"wol_admin/config"
+	"wol-panel/config"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )

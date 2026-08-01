@@ -20,7 +20,7 @@ fi
 
 echo ""
 echo "========================================"
-echo "Building wol_admin v${VERSION}"
+echo "Building wol-panel v${VERSION}"
 echo "Build time: ${BUILD_TIME}"
 echo "========================================"
 
@@ -34,7 +34,7 @@ bash bin/sh/build-windows-x86-64.sh  "$VERSION"
 # 源码包
 echo ""
 echo "--- Building source-code.zip ---"
-SRC_NAME="wol_admin-${VERSION}-source-code"
+SRC_NAME="wol-panel-${VERSION}-source-code"
 rm -f "${RELEASE_DIR}/${SRC_NAME}.zip"
 git archive --format=zip --prefix="${SRC_NAME}/" -o "${RELEASE_DIR}/${SRC_NAME}.zip" HEAD
 echo "Done: ${RELEASE_DIR}/${SRC_NAME}.zip"

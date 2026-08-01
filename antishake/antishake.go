@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"wol_admin/config"
+	"wol-panel/config"
 )
 
 const (
@@ -70,7 +70,7 @@ func (l *Locker) TryLock(clientID, operation string) bool {
 		return true // anti-shake disabled, always allow
 	}
 
-	key := fmt.Sprintf("wol_admin:lock:%s:%s", clientID, operation)
+	key := fmt.Sprintf("wol-panel:lock:%s:%s", clientID, operation)
 
 	if l.useRedis {
 		return l.redisLock(key)

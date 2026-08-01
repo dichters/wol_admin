@@ -11,20 +11,20 @@ import (
 	"strings"
 	"syscall"
 
-	"wol_admin/antishake"
-	"wol_admin/config"
-	"wol_admin/handler"
-	"wol_admin/logger"
-	"wol_admin/version"
+	"wol-panel/antishake"
+	"wol-panel/config"
+	"wol-panel/handler"
+	"wol-panel/logger"
+	"wol-panel/version"
 )
 
 //go:embed dist/*
 var staticFS embed.FS
 
 func main() {
-	// Handle `./wol_admin version` subcommand
+	// Handle `./wol-panel version` subcommand
 	if len(os.Args) > 1 && os.Args[1] == "version" {
-		fmt.Printf("wol_admin %s %s %s\n", version.Version, version.Arch, version.BuildTime)
+		fmt.Printf("wol-panel %s %s %s\n", version.Version, version.Arch, version.BuildTime)
 		return
 	}
 

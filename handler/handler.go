@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"wol_admin/antishake"
-	"wol_admin/nas"
-	"wol_admin/version"
+	"wol-panel/antishake"
+	"wol-panel/nas"
+	"wol-panel/version"
 )
 
 // response is the unified API response structure.
