@@ -25,11 +25,11 @@ echo "Build time: ${BUILD_TIME}"
 echo "========================================"
 
 # 依次调用各平台构建脚本（编译 + 打包）
-bin/sh/build-linux-aarch64.sh   "$VERSION"
-bin/sh/build-linux-x86-64.sh    "$VERSION"
-bin/sh/build-macos-darwin.sh    "$VERSION"
-bin/sh/build-macos-intel.sh     "$VERSION"
-bin/sh/build-windows-x86-64.sh  "$VERSION"
+bash bin/sh/build-linux-aarch64.sh   "$VERSION"
+bash bin/sh/build-linux-x86-64.sh    "$VERSION"
+bash bin/sh/build-macos-darwin.sh    "$VERSION"
+bash bin/sh/build-macos-intel.sh     "$VERSION"
+bash bin/sh/build-windows-x86-64.sh  "$VERSION"
 
 # 源码包
 echo ""
