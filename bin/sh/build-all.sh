@@ -11,7 +11,7 @@ RELEASE_DIR="release"
 mkdir -p "$RELEASE_DIR"
 
 # 构建前端（仅构建一次，后续各脚本检测到 dist/ 存在会跳过）
-if [ ! -d "dist" ]; then
+if [ ! -d "frontend/dist" ]; then
     echo "========================================"
     echo "Building frontend..."
     echo "========================================"
