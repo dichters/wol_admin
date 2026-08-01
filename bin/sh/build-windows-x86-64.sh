@@ -1,6 +1,6 @@
 #!/bin/bash
-# Build & package wol_admin for macOS Intel
-# 用法：./bin/sh/build-macos-intel.sh [version]
+# Build & package wol_admin for Windows x86-64
+# 用法：./bin/sh/build-windows-x86-64.sh [version]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -13,22 +13,21 @@ if [ ! -d "dist" ]; then
     cd frontend && npm run build && cd ..
 fi
 
-echo "Building wol_admin v${VERSION} darwin/amd64"
-CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
+echo "Building wol_admin v${VERSION} windows/amd64"
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build \
     -ldflags "-s -w -X wol_admin/version.Version=${VERSION} -X wol_admin/version.Arch=amd64 -X 'wol_admin/version.BuildTime=${BUILD_TIME}'" \
-    -o build/wol_admin .
+    -o build/wol_admin.exe .
 
 RELEASE_DIR="release"
 mkdir -p "$RELEASE_DIR"
 
-PKG_NAME="wol_admin-${VERSION}-macos-intel"
+PKG_NAME="wol_admin-${VERSION}-windows-x86-64"
 PKG_DIR="${RELEASE_DIR}/${PKG_NAME}"
 rm -rf "$PKG_DIR"
 mkdir -p "$PKG_DIR"
 
-cp build/wol_admin "${PKG_DIR}/"
+cp build/wol_admin.exe "${PKG_DIR}/"
 cp config.template.json "${PKG_DIR}/"
-cp wol_admin.service "${PKG_DIR}/"
 
 rm -f "${RELEASE_DIR}/${PKG_NAME}.zip"
 pushd "$RELEASE_DIR" > /dev/null

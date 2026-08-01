@@ -90,7 +90,7 @@ func main() {
 	})
 
 	// 5. Start server
-	addr := "0.0.0.0:" + config.Cfg.ServerPort
+	addr := "[::]:" + config.Cfg.ServerPort
 	server := &http.Server{
 		Addr:    addr,
 		Handler: mux,

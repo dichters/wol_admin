@@ -2,11 +2,8 @@ name: Release
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,27 +15,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Read version from version.go
-        id: base_version
-        run: |
-          BASE_VERSION=$(grep 'Version\s*=' version/version.go | head -1 | grep -oP '"\K[^"]+')
-          echo "base_version=${BASE_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Base version: ${BASE_VERSION}"
-
       - name: Determine release version
         id: version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            # tag 触发：使用 tag 名（去掉 v 前缀）
-            TAG="${GITHUB_REF#refs/tags/}"
-            VERSION="${TAG#v}"
-          else
-            # push to master 或手动触发：版本号 + 短 commit hash
-            SHORT_SHA="${GITHUB_SHA::7}"
-            VERSION="${{ steps.base_version.outputs.base_version }}-${SHORT_SHA}"
-          fi
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Release version: ${VERSION}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Release version: ${VERSION} (tag: ${TAG})"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -68,17 +52,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
 
-          # 判断是否为 tag 触发（正式版 vs 预发布版）
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            PRERELEASE_FLAG=""
-            TAG="${GITHUB_REF#refs/tags/}"
-          else
-            PRERELEASE_FLAG="--prerelease"
-            TAG="v${VERSION}"
-          fi
-
-          # 创建 release
           gh release create "${TAG}" \
             --title "wol_admin ${VERSION}" \
             --notes "## wol_admin ${VERSION}
@@ -86,20 +61,20 @@ jobs:
           自动构建发布。详见 [README](https://github.com/${{ github.repository }}/blob/master/README.md)。
 
           ### 下载说明
-          - **Linux x64**: \`wol_admin-${VERSION}-linux-x64.tar.gz\`
-          - **Linux arm64** (香橙派等): \`wol_admin-${VERSION}-linux-arm64.tar.gz\`
-          - **Windows x64**: \`wol_admin-${VERSION}-windows-x64.zip\`
-          - **Windows arm**: \`wol_admin-${VERSION}-windows-arm.zip\`
-          - **macOS Apple Silicon**: \`wol_admin-${VERSION}-macos-apple-silicon.tar.gz\`
-          - **macOS Intel**: \`wol_admin-${VERSION}-macos-intel.tar.gz\`
+          - **Linux aarch64**: \`wol_admin-${VERSION}-linux-aarch64.zip\`
+          - **Linux x86-64**: \`wol_admin-${VERSION}-linux-x86-64.zip\`
+          - **macOS darwin** (Apple Silicon): \`wol_admin-${VERSION}-macos-darwin.zip\`
+          - **macOS Intel**: \`wol_admin-${VERSION}-macos-intel.zip\`
+          - **Windows x86-64**: \`wol_admin-${VERSION}-windows-x86-64.zip\`
+          - **源码包**: \`wol_admin-${VERSION}-source-code.zip\`
 
-          每个压缩包内含：
+          每个二进制压缩包内含：
           - 二进制文件
           - 配置文件样例 (\`config.template.json\`)
-          - systemd 服务文件 (\`wol_admin.service\`)
-          - 说明文档 (\`README.md\`)
+          - systemd 服务文件 (\`wol_admin.service\`，仅 Linux/macOS)
+
+          所有产物均使用 \`CGO_ENABLED=0\` 纯静态编译。
           " \
-            ${PRERELEASE_FLAG} \
             release/*
 
           echo "Release ${TAG} created successfully!"
