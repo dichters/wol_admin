@@ -1,5 +1,5 @@
 #!/bin/bash
-# CI 专用批量构建脚本：构建前端后依次调用各平台构建脚本并生成源码包
+# CI 专用批量构建脚本：构建前端后依次调用各平台构建脚本
 # 用法：./bin/sh/build-all.sh [version]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -30,14 +30,6 @@ bash bin/sh/build-linux-x86-64.sh    "$VERSION"
 bash bin/sh/build-macos-darwin.sh    "$VERSION"
 bash bin/sh/build-macos-intel.sh     "$VERSION"
 bash bin/sh/build-windows-x86-64.sh  "$VERSION"
-
-# 源码包
-echo ""
-echo "--- Building source-code.zip ---"
-SRC_NAME="wol-panel-${VERSION}-source-code"
-rm -f "${RELEASE_DIR}/${SRC_NAME}.zip"
-git archive --format=zip --prefix="${SRC_NAME}/" -o "${RELEASE_DIR}/${SRC_NAME}.zip" HEAD
-echo "Done: ${RELEASE_DIR}/${SRC_NAME}.zip"
 
 echo ""
 echo "========================================"

@@ -15,22 +15,15 @@ var Cfg *Config
 
 // Config represents all configurable parameters of the application.
 type Config struct {
-	ServerPort     string   `json:"server_port"`
-	StdoutLogLevel string   `json:"stdout_log_level"`
-	FileLogLevel   string   `json:"file_log_level"`
-	ErrorLogLevel  string   `json:"error_log_level"`
-	EnableAntiShake bool    `json:"enable_anti_shake"`
-	Redis          RedisCfg `json:"redis"`
-	NasIP          string   `json:"nas_ip"`
-	NasUser        string   `json:"nas_user"`
-	NasMAC         string   `json:"nas_mac"`
-}
-
-// RedisCfg holds Redis connection parameters.
-type RedisCfg struct {
-	IP       string `json:"ip"`
-	Port     string `json:"port"`
-	Password string `json:"password"`
+	ServerPort      string `json:"server_port"`
+	StdoutLogLevel  string `json:"stdout_log_level"`
+	FileLogLevel    string `json:"file_log_level"`
+	ErrorLogLevel   string `json:"error_log_level"`
+	EnableAntiShake bool   `json:"enable_anti_shake"`
+	NasIP           string `json:"nas_ip"`
+	NasUser         string `json:"nas_user"`
+	NasMAC          string `json:"nas_mac"`
+	WOLBroadcast    string `json:"wol_broadcast"`
 }
 
 // Load reads config.json from dir and parses it into Cfg.
@@ -75,6 +68,11 @@ func Load(dir string) {
 	// Default server port
 	if cfg.ServerPort == "" {
 		cfg.ServerPort = "8080"
+	}
+
+	// Default WOL broadcast target (255.255.255.255:9, same as wakeonlan)
+	if cfg.WOLBroadcast == "" {
+		cfg.WOLBroadcast = "255.255.255.255:9"
 	}
 
 	Cfg = &cfg

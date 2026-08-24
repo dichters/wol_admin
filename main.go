@@ -35,7 +35,7 @@ func main() {
 	logger.Init()
 	slog.Info("config loaded", "port", config.Cfg.ServerPort)
 
-	// 3. Init anti-shake locker (Redis when enabled, skip otherwise)
+	// 3. Init anti-shake locker (in-memory TTL cache when enabled)
 	locker := antishake.New()
 	defer locker.Close()
 

@@ -44,3 +44,4 @@ vendor/
 # vibe coding
 .claude/
 .docs/
+.AGENTS.md

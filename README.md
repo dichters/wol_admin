@@ -6,7 +6,7 @@
 
 - **WOL 开机**：点击按钮发送 Wake-on-LAN 魔术包，远程唤醒 NAS
 - **SSH 关机**：点击按钮通过 SSH 远程执行 `sudo poweroff` 安全关机
-- **双层防抖**：前端按钮锁定 + 后端 Redis/内存防抖，防止重复提交
+- **双层防抖**：前端按钮锁定 + 后端内存防抖，防止重复提交
 - **单文件部署**：前端资源嵌入 Go 二进制，零依赖交付
 - **版本管理**：内置版本号、架构、构建时间，支持 `./wol-panel version` 查看
 - **国际化**：支持中英文切换
@@ -60,22 +60,6 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o build/wo
 # 输出：wol-panel 0.0.1 arm64 2026-07-04 12:00:00
 ```
 
-## Armbian Redis 安装配置步骤
-
-```bash
-# 安装 Redis
-sudo apt update
-sudo apt install redis-server -y
-
-# 启动并设置开机自启
-sudo systemctl enable redis-server
-sudo systemctl start redis-server
-
-# 验证运行
-redis-cli ping
-# 应返回 PONG
-```
-
 ## config.json 全字段说明
 
 将 `config.template.json` 复制为 `config.json` 并修改：
@@ -90,13 +74,11 @@ cp config.template.json config.json
 | `stdout_log_level` | string | 控制台日志级别：`Off` / `Debug` / `Info` / `Warn` / `Error` |
 | `file_log_level` | string | 磁盘文件日志级别：`Off` / `Debug` / `Info` / `Warn` / `Error` |
 | `error_log_level` | string | 错误日志文件级别：`Off` / `Debug` / `Info` / `Warn` / `Error` |
-| `enable_anti_shake` | bool | 是否开启后端 Redis 防抖锁。`false` 则跳过 Redis |
-| `redis.ip` | string | Redis 地址（仅 enable_anti_shake=true 时生效） |
-| `redis.port` | string | Redis 端口 |
-| `redis.password` | string | Redis 密码，空字符串表示无密码 |
+| `enable_anti_shake` | bool | 是否开启后端内存防抖锁。`false` 则跳过防抖 |
 | `nas_ip` | string | NAS 局域网 IP，用于 SSH 关机 |
 | `nas_user` | string | NAS SSH 登录账号 |
 | `nas_mac` | string | NAS MAC 地址，用于 WOL 唤醒 |
+| `wol_broadcast` | string | WOL 魔术包广播目标，默认 `255.255.255.255:9` |
 
 **日志级别说明**：
 - `Off`：完全关闭该输出通道
@@ -213,13 +195,6 @@ ssh-copy-id <nas_user>@<nas_ip>
 ssh <nas_user>@<nas_ip> "echo ok"
 ```
 
-## WOL 依赖
-
-```bash
-# 在开发板上安装 wakeonlan 工具
-sudo apt install wakeonlan -y
-```
-
 ## 项目结构
 
 ```
@@ -227,7 +202,7 @@ wol-panel/
 ├── main.go                # 程序入口：配置加载、日志初始化、HTTP 服务
 ├── config/config.go       # 配置读取独立包
 ├── logger/logger.go       # 三渠道日志封装
-├── antishake/antishake.go # Redis/内存防抖锁
+├── antishake/antishake.go # 内存防抖锁（TTL 缓存）
 ├── nas/nas.go             # NAS 操作（WOL、SSH关机）
 ├── handler/handler.go     # HTTP 接口处理器
 ├── version/version.go     # 版本信息（ldflags 注入）
